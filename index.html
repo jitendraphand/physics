@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Homi Bhabha Class 9 Physics Gallery — 3D Auditorium</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#0a0a12;font-family:'Segoe UI',system-ui,Arial,sans-serif;-webkit-user-select:none;user-select:none}
+  #app{position:fixed;inset:0}
+  canvas{display:block}
+  /* Start overlay */
+  #startOverlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%, #2b2a55 0%, #12121f 60%, #06060c 100%);padding:16px;overflow:auto}
+  .startCard{max-width:720px;width:100%;background:linear-gradient(160deg,#1c1c2e,#141422);border:1px solid #c9a227;color:#f0e9d2;border-radius:18px;padding:28px 28px 22px;box-shadow:0 20px 80px rgba(0,0,0,.7),0 0 0 6px rgba(201,162,39,.12);text-align:center}
+  .startCard h1{font-size:clamp(22px,4vw,34px);letter-spacing:.5px;color:#ffd86b;line-height:1.2}
+  .startCard h2{font-size:14px;font-weight:600;letter-spacing:3px;color:#9fd8ff;margin:10px 0 12px;text-transform:uppercase}
+  .startCard p{font-size:14.5px;line-height:1.6;color:#d8d2bd;margin:8px 0}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0}
+  .badge{background:#26263d;border:1px solid #3d3d60;color:#cfe6ff;font-size:12.5px;padding:6px 12px;border-radius:999px}
+  .badge b{color:#ffd86b}
+  #startBtn{margin-top:16px;background:linear-gradient(180deg,#ffd86b,#c9a227);border:none;color:#1a1400;font-weight:800;font-size:18px;padding:14px 42px;border-radius:12px;cursor:pointer;box-shadow:0 6px 24px rgba(201,162,39,.45);transition:.15s}
+  #startBtn:hover{transform:translateY(-1px) scale(1.02)}
+  .controlsGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;text-align:left}
+  .controlsGrid div{background:#101020;border:1px solid #2e2e4a;border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.5}
+  kbd{background:#fff;color:#111;border-radius:6px;padding:1px 7px;font-family:monospace;font-weight:700;font-size:12px;border-bottom:2px solid #999}
+  /* HUD */
+  #hud{position:fixed;top:0;left:0;right:0;z-index:20;display:none;justify-content:space-between;align-items:flex-start;padding:10px 12px;pointer-events:none}
+  #hud.on{display:flex}
+  .hudBox{background:rgba(10,10,20,.72);backdrop-filter:blur(8px);border:1px solid rgba(201,162,39,.5);color:#ffe9a8;border-radius:12px;padding:8px 12px;font-size:13px;line-height:1.5;pointer-events:auto;max-width:46vw}
+  #hallName{font-weight:800;font-size:14px;color:#ffd86b;letter-spacing:.5px}
+  #counter{color:#9fd8ff}
+  #helpBtn,#soundBtn{cursor:pointer}
+  #crosshair{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:15;display:none;pointer-events:none}
+  #crosshair.on{display:block}
+  #crosshair .dot{width:8px;height:8px;background:#fff;border-radius:50%;box-shadow:0 0 8px #000,0 0 2px #fff;margin:auto}
+  #crosshair .ring{width:34px;height:34px;border:2px solid rgba(255,255,255,.65);border-radius:50%;margin-top:-21px;margin-left:-13px;transition:.15s}
+  #crosshair.active .ring{border-color:#ffd86b;box-shadow:0 0 14px rgba(255,216,107,.9);transform:scale(1.15)}
+  #prompt{position:fixed;left:50%;bottom:172px;transform:translateX(-50%);z-index:15;display:none;background:rgba(0,0,0,.78);border:1px solid #ffd86b;color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;text-align:center;max-width:92vw}
+  #prompt.on{display:block}
+  #prompt b{color:#ffd86b}
+  /* On-screen control panel (desktop + mobile) */
+  #touchUI{position:fixed;left:0;right:0;bottom:0;z-index:18;display:none;pointer-events:none;padding:0 10px 10px}
+  #touchUI.on{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+  #touchUI.hiddenPanel{display:none}
+  #joyBase{position:relative;width:132px;height:132px;background:rgba(10,10,20,.55);border:2px solid rgba(255,216,107,.7);border-radius:50%;pointer-events:auto;touch-action:none;flex-shrink:0}
+  #joyKnob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;background:radial-gradient(circle at 35% 30%,#fff,#9fb3c8);border-radius:50%;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+  .joyLabel{position:absolute;left:0;right:0;bottom:-18px;text-align:center;font-size:10px;letter-spacing:2px;color:#ffd86b}
+  #midBtns{display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto}
+  #actionBtn{width:86px;height:86px;border-radius:50%;background:linear-gradient(180deg,#ffd86b,#b8912a);border:3px solid #fff3c4;color:#221a00;font-weight:900;font-size:15px;pointer-events:auto;box-shadow:0 6px 20px rgba(0,0,0,.5);cursor:pointer}
+  #actionBtn:active{transform:scale(.94)}
+  .zoomBtns{display:flex;gap:8px;pointer-events:auto}
+  .zoomBtns button{width:48px;height:48px;border-radius:12px;border:1px solid #ffd86b;background:rgba(0,0,0,.65);color:#ffd86b;font-size:22px;font-weight:900;cursor:pointer}
+  #lookPad{background:rgba(10,10,20,.55);border:2px solid rgba(159,216,255,.7);border-radius:16px;padding:8px;pointer-events:auto;touch-action:none;text-align:center;position:relative}
+  #lookPad .row{display:flex;gap:6px;justify-content:center}
+  #lookPad button{width:52px;height:48px;border-radius:12px;border:1px solid #9fd8ff;background:rgba(20,30,60,.9);color:#fff;font-size:20px;font-weight:900;cursor:pointer;touch-action:none}
+  #lookPad button:active,#lookPad button.held{background:#9fd8ff;color:#111}
+  #lookPad .lbl{font-size:10px;letter-spacing:2px;color:#9fd8ff;margin-top:4px}
+  #panelHide{position:absolute;right:8px;top:-34px;width:34px;height:28px;border-radius:8px 8px 0 0;border:1px solid #ffd86b;background:rgba(0,0,0,.7);color:#ffd86b;pointer-events:auto;cursor:pointer}
+  #panelShow{position:fixed;right:12px;bottom:12px;z-index:19;display:none;background:rgba(0,0,0,.7);border:1px solid #ffd86b;color:#ffd86b;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:800;cursor:pointer}
+  #panelShow.on{display:block}
+  #app canvas{touch-action:none}
+  /* Modal reader */
+  #reader{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.72);padding:14px}
+  #reader.on{display:flex}
+  #readerCard{width:min(680px,96vw);max-height:92vh;overflow:auto;background:#fdfbf3;color:#14141a;border-radius:16px;border:6px solid #c9a227;box-shadow:0 20px 80px rgba(0,0,0,.8)}
+  #readerHead{position:sticky;top:0;background:linear-gradient(180deg,#1a1a2e,#2a2a4a);color:#ffd86b;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:3px solid #c9a227}
+  #readerHead h3{font-size:17px;line-height:1.3}
+  #readerHead small{display:block;color:#9fd8ff;font-size:12px;letter-spacing:1px}
+  #closeReader{background:#ff5a5a;border:none;color:#fff;font-weight:900;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;flex-shrink:0}
+  #readerBody{padding:18px 20px 22px}
+  #readerFormula{text-align:center;background:#0f1830;color:#fff;border-radius:12px;padding:20px 12px;margin:8px 0 14px;border:2px solid #1e3a6e}
+  #readerFormula .f{font-family:Georgia,serif;font-size:clamp(28px,6vw,46px);font-weight:700;color:#ffd86b;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+  #readerFormula .t{font-size:13px;color:#9fd8ff;margin-top:6px;letter-spacing:1px}
+  #readerBody table{width:100%;border-collapse:collapse;margin:10px 0;font-size:15px}
+  #readerBody th{background:#1a1a2e;color:#ffd86b;padding:9px;font-size:13px;letter-spacing:1px;text-align:left}
+  #readerBody td{padding:8px 9px;border-bottom:1px solid #e5ddc3}
+  #readerBody td:last-child,#readerBody th:last-child{text-align:left}
+  .unitPill{background:#eef6ff;border:1px solid #8fb8dd;border-radius:999px;padding:1px 9px;font-size:13px;white-space:nowrap}
+  .zoomRow{display:flex;gap:8px;align-items:center;justify-content:center;margin:10px 0}
+  .zoomRow button{background:#1a1a2e;color:#ffd86b;border:1px solid #c9a227;border-radius:10px;padding:8px 16px;font-size:15px;font-weight:800;cursor:pointer}
+  #readerNav{display:flex;gap:8px;margin-top:12px}
+  #readerNav button{flex:1;padding:11px;border-radius:10px;border:none;font-weight:800;font-size:14px;cursor:pointer}
+  #prevBtn{background:#e8e8ef;color:#222}
+  #nextBtn{background:#1a1a2e;color:#ffd86b}
+  /* minimap */
+  #miniWrap{position:fixed;left:12px;top:74px;z-index:19;display:none;background:rgba(0,0,0,.6);border:1px solid rgba(255,216,107,.5);border-radius:10px;padding:6px}
+  #miniWrap.on{display:block}
+  #loading{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:#06060c;color:#ffd86b;font-size:16px}
+  @media(max-width:700px){.controlsGrid{grid-template-columns:1fr}.hudBox{font-size:12px;max-width:60vw}#prompt{bottom:210px}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}
+</script>
+</head>
+<body>
+<div id="app"></div>
+<div id="loading">Loading 3D auditorium…</div>
+
+<div id="startOverlay">
+  <div class="startCard">
+    <h1>🏛️ Homi Bhabha Physics Gallery</h1>
+    <h2>Class 9 • 20 Formulas • 2 Halls</h2>
+    <p>Walk inside a museum auditorium. Each framed picture shows one <b style="color:#ffd86b">important formula</b> with <b style="color:#ffd86b">meaning of symbols</b> &amp; <b style="color:#ffd86b">SI units</b>. Go close, look at a frame and press <kbd>E</kbd> (or tap READ) to open a zoomable study card.</p>
+    <div class="badges">
+      <div class="badge"><b>Hall A</b> — Motion &amp; Force (1–10)</div>
+      <div class="badge"><b>Corridor</b> — Scientists Walk</div>
+      <div class="badge"><b>Hall B</b> — Energy &amp; Sound (11–20)</div>
+    </div>
+    <div class="controlsGrid">
+      <div>🖥️ <b>Desktop:</b> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk • <kbd>◀</kbd><kbd>▶</kbd> or <kbd>Q</kbd>/<kbd>Z</kbd> rotate • mouse <b>drag</b> or click = look • wheel = zoom • <kbd>E</kbd> = read. On-screen buttons also work.</div>
+      <div>📱 <b>Mobile:</b> Left <b>MOVE</b> joystick = walk, right <b>LOOK ◀▲▼▶</b> buttons or <b>swipe-drag</b> on screen = rotate, <b>READ</b> = open picture, <b>+ / −</b> = zoom</div>
+    </div>
+    <button id="startBtn">▶ &nbsp; Enter Gallery</button>
+    <p style="font-size:12px;opacity:.7;margin-top:10px">Best on Chrome / Edge. Needs internet once for three.js CDN. No installation.</p>
+  </div>
+</div>
+
+<div id="hud">
+  <div class="hudBox"><div id="hallName">HALL A — Motion &amp; Force</div><div id="counter">Visited 0 / 20 • Find all frames!</div></div>
+  <div class="hudBox" style="text-align:right">WASD walk • ◀/▶ rotate • drag to look • <b>E</b> read • wheel zoom<br><span id="helpBtn" style="color:#ffd86b;text-decoration:underline">⛶ Fullscreen</span> • <span id="soundBtn">🔊 Footstep: on</span></div>
+</div>
+<div id="crosshair"><div class="dot"></div><div class="ring"></div></div>
+<div id="prompt"></div>
+<div id="miniWrap"><canvas id="mini" width="150" height="190"></canvas></div>
+
+<div id="touchUI">
+  <div id="joyBase"><div id="joyKnob"></div><div class="joyLabel">MOVE</div></div>
+  <div id="midBtns">
+    <button id="actionBtn">READ</button>
+    <div class="zoomBtns"><button id="zin" title="Zoom in">+</button><button id="zout" title="Zoom out">−</button></div>
+  </div>
+  <div id="lookPad">
+    <button id="panelHide" title="Hide panel">–</button>
+    <div class="row"><button data-look="up" title="Look up">▲</button></div>
+    <div class="row"><button data-look="left" title="Rotate left">◀</button><button data-look="down" title="Look down">▼</button><button data-look="right" title="Rotate right">▶</button></div>
+    <div class="lbl">LOOK / ROTATE</div>
+  </div>
+</div>
+<button id="panelShow">🎮 Controls</button>
+
+<div id="reader">
+  <div id="readerCard">
+    <div id="readerHead"><h3><small id="readerKicker">HALL A • No.1</small><span id="readerTitle"></span></h3><button id="closeReader">✕</button></div>
+    <div id="readerBody">
+      <div id="readerFormula"><div class="f" id="readerF"></div><div class="t" id="readerSub"></div></div>
+      <div class="zoomRow"><button id="fontMinus">A− smaller</button><span id="fontSizeLabel" style="font-size:13px;color:#555">Text size: 100%</span><button id="fontPlus">A+ larger</button></div>
+      <table><thead><tr><th>Symbol</th><th>Meaning</th><th>SI Unit</th></tr></thead><tbody id="readerTable"></tbody></table>
+      <div id="readerNote" style="background:#fff8dc;border:1px solid #c9a227;border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.6"></div>
+      <div id="readerNav"><button id="prevBtn">◀ Prev</button><button id="nextBtn">Next ▶</button></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* ================= DATA : 20 FORMULAS ================= */
+const FORMULAS = [
+ {hall:'A',no:1,title:'Speed',f:'v = d / t',sub:'SPEED • MOTION',rows:[['v','speed','m/s (metre per second)'],['d','distance travelled','m (metre)'],['t','time taken','s (second)']],note:'Scalar quantity. Uniform speed covers equal distance in equal time. 1 km/h = 5/18 m/s.'},
+ {hall:'A',no:2,title:'Average Velocity',f:'v̅ = (u + v) / 2',sub:'UNIFORM ACCELERATION',rows:[['v̅','average velocity','m/s'],['u','initial velocity','m/s'],['v','final velocity','m/s']],note:'Valid only when acceleration is uniform. Direction matters — velocity is a vector.'},
+ {hall:'A',no:3,title:'Acceleration',f:'a = (v − u) / t',sub:'RATE OF CHANGE OF VELOCITY',rows:[['a','acceleration','m/s²'],['v','final velocity','m/s'],['u','initial velocity','m/s'],['t','time interval','s']],note:'Positive = speeding up, negative (retardation) = slowing down. Freely falling body: a = g = 9.8 m/s².'},
+ {hall:'A',no:4,title:'1st Equation of Motion',f:'v = u + a·t',sub:'VELOCITY – TIME RELATION',rows:[['v','final velocity','m/s'],['u','initial velocity','m/s'],['a','acceleration','m/s²'],['t','time','s']],note:'Graph is a straight line; slope = acceleration. Used when distance is not given.'},
+ {hall:'A',no:5,title:'2nd Equation of Motion',f:'s = u·t + ½·a·t²',sub:'POSITION – TIME RELATION',rows:[['s','displacement','m'],['u','initial velocity','m/s'],['t','time','s'],['a','acceleration','m/s²']],note:'Area under v–t graph = displacement. If u = 0, s = ½at² (free fall from rest).'},
+ {hall:'A',no:6,title:'3rd Equation of Motion',f:'v² = u² + 2·a·s',sub:'VELOCITY – POSITION RELATION',rows:[['v','final velocity','m/s'],['u','initial velocity','m/s'],['a','acceleration','m/s²'],['s','displacement','m']],note:'Time is eliminated. Best for braking / stopping distance problems.'},
+ {hall:'A',no:7,title:"Newton's 2nd Law — Force",f:'F = m·a',sub:'FORCE • MASS • ACCELERATION',rows:[['F','net force','N (newton = kg·m/s²)'],['m','mass','kg (kilogram)'],['a','acceleration','m/s²']],note:'1 N = force that gives 1 kg an acceleration of 1 m/s². Force is a vector.'},
+ {hall:'A',no:8,title:'Momentum',f:'p = m·v',sub:'MOMENTUM',rows:[['p','momentum','kg·m/s'],['m','mass','kg'],['v','velocity','m/s']],note:'Vector quantity. Heavier / faster body is harder to stop. Conserved when no external force acts.'},
+ {hall:'A',no:9,title:'Impulse',f:'J = F·t = Δp',sub:'IMPULSE = CHANGE IN MOMENTUM',rows:[['J','impulse','N·s (= kg·m/s)'],['F','average force','N'],['t','contact time','s'],['Δp','change in momentum','kg·m/s']],note:'Why airbags & cushioned landing work: more time → less force for same Δp.'},
+ {hall:'A',no:10,title:'Weight',f:'W = m·g',sub:'WEIGHT • GRAVITY',rows:[['W','weight (gravitational force)','N'],['m','mass','kg'],['g','acc. due to gravity (9.8)','m/s²']],note:'Mass is constant everywhere; weight changes (Moon = mg/6). Weighing machine reads in kg but measures weight.'},
+ {hall:'B',no:11,title:"Newton's Gravitation",f:'F = G·M·m / r²',sub:'UNIVERSAL GRAVITATION',rows:[['F','gravitational force','N'],['G','universal constant 6.67×10⁻¹¹','N·m²/kg²'],['M, m','the two masses','kg'],['r','distance between centres','m']],note:'Attractive, acts along line joining centres. Holds Moon, satellites and tides.'},
+ {hall:'B',no:12,title:'g from Earth',f:'g = G·M / R²',sub:'ACCELERATION DUE TO GRAVITY',rows:[['g','acc. due to gravity ≈ 9.8','m/s²'],['G','gravitational constant','N·m²/kg²'],['M','mass of Earth 6×10²⁴','kg'],['R','radius of Earth 6.4×10⁶','m']],note:'g decreases with height & depth. At poles slightly more than equator.'},
+ {hall:'B',no:13,title:'Pressure',f:'P = F / A',sub:'PRESSURE',rows:[['P','pressure','Pa (pascal = N/m²)'],['F','thrust (normal force)','N'],['A','area of contact','m²']],note:'Narrow knife cuts easily (small A → large P). 1 atm ≈ 1.01×10⁵ Pa.'},
+ {hall:'B',no:14,title:'Density',f:'ρ = m / V',sub:'DENSITY & FLOATING',rows:[['ρ','density (rho)','kg/m³'],['m','mass','kg'],['V','volume','m³']],note:'Floats if ρ < water (1000 kg/m³). Relative density has no unit. Buoyancy = weight of displaced water.'},
+ {hall:'B',no:15,title:'Work',f:'W = F·s·cos θ',sub:'WORK',rows:[['W','work done','J (joule = N·m)'],['F','applied force','N'],['s','displacement','m'],['θ','angle between F and s','degree (°)']],note:'θ=0° → max work; θ=90° → zero work (coolie carrying load). 1 J = 1 N × 1 m.'},
+ {hall:'B',no:16,title:'Kinetic Energy',f:'Eₖ = ½·m·v²',sub:'ENERGY OF MOTION',rows:[['Eₖ','kinetic energy','J (joule)'],['m','mass','kg'],['v','speed','m/s']],note:'Doubling speed → 4× energy (braking distance!). Moving car, running child possess KE.'},
+ {hall:'B',no:17,title:'Potential Energy',f:'Eₚ = m·g·h',sub:'GRAVITATIONAL POTENTIAL ENERGY',rows:[['Eₚ','potential energy','J'],['m','mass','kg'],['g','gravity 9.8','m/s²'],['h','height above ground','m']],note:'Stored energy by position. Water in dam, stretched bow. mgh + ½mv² = constant (no friction).'},
+ {hall:'B',no:18,title:'Power',f:'P = W / t',sub:'POWER • RATE OF WORK',rows:[['P','power','W (watt = J/s)'],['W','work / energy','J'],['t','time','s']],note:'1 HP = 746 W. 100 W bulb uses 100 J every second. Also P = F·v for vehicles.'},
+ {hall:'B',no:19,title:'Wave Speed',f:'v = f·λ',sub:'WAVE • SOUND',rows:[['v','wave speed','m/s'],['f','frequency','Hz (hertz = /s)'],['λ','wavelength (lambda)','m (metre)']],note:'Sound in air ≈ 343 m/s. Also f = 1/T. Audible range 20 Hz – 20 000 Hz.'},
+ {hall:'B',no:20,title:'Echo Distance',f:'d = v·t / 2',sub:'ECHO • SONAR',rows:[['d','distance of obstacle','m'],['v','speed of sound','m/s'],['t','time for echo to return','s']],note:'Divide by 2 — sound goes and returns. Bats, SONAR and ultrasound scan use this.'},
+];
+
+/* ================= RENDERER / SCENE ================= */
+const app = document.getElementById('app');
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+app.appendChild(renderer.domElement);
+document.getElementById('loading').style.display='none';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b0e1a);
+scene.fog = new THREE.Fog(0x0b0e1a, 18, 70);
+
+const camera = new THREE.PerspectiveCamera(68, innerWidth/innerHeight, 0.1, 200);
+camera.rotation.order='YXZ';
+
+const player = {x:0, z:-7, yaw:0, pitch:0, speed:3.4};
+function applyCam(){ camera.position.set(player.x, 1.65, player.z); camera.rotation.set(player.pitch, player.yaw, 0); }
+
+/* ---------- textures (procedural, no external files) ---------- */
+function canvasTex(w,h,draw){ const c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; return t; }
+const floorTex = canvasTex(512,512,(g,w,h)=>{
+  g.fillStyle='#7a5a36'; g.fillRect(0,0,w,h);
+  for(let i=0;i<8;i++){ g.fillStyle=`rgba(${40+Math.random()*20},${22+Math.random()*10},8,0.35)`; g.fillRect(0,i*64,w,3); }
+  for(let p=0;p<900;p++){ g.fillStyle=`rgba(0,0,0,${Math.random()*0.08})`; g.fillRect(Math.random()*w,Math.random()*h,2,2); }
+  g.strokeStyle='rgba(0,0,0,.4)'; g.lineWidth=3; g.strokeRect(0,0,w,h);
+});
+floorTex.repeat.set(14,14);
+const carpetTex = canvasTex(256,256,(g,w,h)=>{ g.fillStyle='#7a1020'; g.fillRect(0,0,w,h); g.strokeStyle='#c9a227'; g.lineWidth=10; g.strokeRect(12,12,w-24,h-24); g.fillStyle='#c9a227'; for(let i=0;i<8;i++){g.beginPath();g.arc(w/2,h/2,14+i*12,0,7);g.stroke();} });
+carpetTex.repeat.set(2,10);
+const wallTex = canvasTex(512,256,(g,w,h)=>{ const gr=g.createLinearGradient(0,0,0,h); gr.addColorStop(0,'#e9dfc8'); gr.addColorStop(.62,'#e9dfc8'); gr.addColorStop(.62,'#4a3320'); gr.addColorStop(1,'#2e2012'); g.fillStyle=gr; g.fillRect(0,0,w,h); g.fillStyle='rgba(201,162,39,.9)'; g.fillRect(0,h*0.60,w,6); });
+wallTex.repeat.set(4,1);
+
+/* ---------- materials ---------- */
+const matFloor = new THREE.MeshStandardMaterial({map:floorTex, roughness:.55, metalness:.08});
+const matCarpet = new THREE.MeshStandardMaterial({map:carpetTex, roughness:.95});
+const matWall = new THREE.MeshStandardMaterial({map:wallTex, roughness:.9});
+const matWallPlain = new THREE.MeshStandardMaterial({color:0xe6dcc4, roughness:.9});
+const matTrim = new THREE.MeshStandardMaterial({color:0x8a6a2a, roughness:.35, metalness:.55});
+const matCeil = new THREE.MeshStandardMaterial({color:0xf2ecdd, roughness:1});
+const matPillar = new THREE.MeshStandardMaterial({color:0xd9cba6, roughness:.7});
+const matBench = new THREE.MeshStandardMaterial({color:0x4a2e17, roughness:.6});
+
+/* ---------- lights ---------- */
+scene.add(new THREE.AmbientLight(0xfff2d8, 0.55));
+const hemi = new THREE.HemisphereLight(0xfff5e0, 0x221a10, 0.5); scene.add(hemi);
+function spot(x,y,z,tx,tz,int=60){ const L=new THREE.SpotLight(0xffe9b8,int,18,Math.PI/5,0.45,1.4); L.position.set(x,y,z); L.target.position.set(tx,1.5,tz); scene.add(L); scene.add(L.target); }
+
+/* ---------- architecture helpers ---------- */
+const colliders=[]; // {x1,z1,x2,z2}
+function solid(x,z,w,d){ colliders.push({x1:x-w/2,z1:z-d/2,x2:x+w/2,z2:z+d/2}); }
+function box(w,h,d,mat,x,y,z,shadow=true){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); m.castShadow=shadow; m.receiveShadow=true; scene.add(m); return m; }
+function floorRect(x,z,w,d,mat){ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat); m.rotation.x=-Math.PI/2; m.position.set(x,0,z); m.receiveShadow=true; scene.add(m); }
+
+/* Layout: HallA center (0,0) size 32x20 ; corridor x∈[-3,3], z∈[10,22] ; HallB center (0,31) size 32x18 */
+const HALL_A={x:0,z:0,w:32,d:20}, HALL_B={x:0,z:31,w:32,d:18}, CORR={x:0,z:16,w:6,d:12};
+
+floorRect(HALL_A.x,HALL_A.z,HALL_A.w,HALL_A.d,matFloor);
+floorRect(HALL_B.x,HALL_B.z,HALL_B.w,HALL_B.d,matFloor);
+floorRect(CORR.x,CORR.z,CORR.w,CORR.d,matCarpet);
+// red carpet strips in halls
+floorRect(0,0,3,18,matCarpet); floorRect(0,31,3,16,matCarpet);
+
+function wallRun(x,z,w,d,h=4.2){ const m=box(w,h,d,matWall,x,h/2,z); solid(x,z,w+0.3,d+0.3); return m; }
+// Hall A walls (south has entrance gap 4m, north has corridor gap 6m)
+wallRun(-10,-10,12,0.6); wallRun(10,-10,12,0.6);           // south (gap at x 0 ±2)
+wallRun(-16,0,0.6,20.6); wallRun(16,0,0.6,20.6);           // sides
+wallRun(-11,10,10,0.6); wallRun(11,10,10,0.6);             // north (gap for corridor)
+// Hall B walls (south gap for corridor, north solid)
+wallRun(-11,22,10,0.6); wallRun(11,22,10,0.6);
+wallRun(-16,31,0.6,18.6); wallRun(16,31,0.6,18.6);
+wallRun(0,40,32.6,0.6);
+// corridor sides
+wallRun(-3.3,16,0.6,12.6); wallRun(3.3,16,0.6,12.6);
+// header above gaps
+box(4.4,1.2,0.6,matWallPlain,0,3.6,-10); box(6.6,1.2,0.6,matWallPlain,0,3.6,10); box(6.6,1.2,0.6,matWallPlain,0,3.6,22);
+// ceilings
+box(32.6,0.3,20.6,matCeil,0,4.2,0,false); box(32.6,0.3,18.6,matCeil,0,4.2,31,false); box(7.2,0.3,12.6,matCeil,0,4.2,16,false);
+// skirting / cornice
+[[0,-9.6,32],[0,9.6,10],[-15.6,0,0],[15.6,0,0]].forEach(()=>{});
+box(32,0.25,0.25,matTrim,0,3.95,-9.65); box(32,0.25,0.25,matTrim,0,3.95,39.65);
+// pillars
+[[-13,-7],[13,-7],[-13,7],[13,7],[-13,24],[13,24],[-13,38],[13,38]].forEach(([x,z])=>{
+  const p=new THREE.Mesh(new THREE.CylinderGeometry(0.45,0.55,4.2,16),matPillar); p.position.set(x,2.1,z); p.castShadow=true; scene.add(p);
+  box(1.4,0.25,1.4,matTrim,x,0.12,z); box(1.4,0.25,1.4,matTrim,x,4.05,z); solid(x,z,1.3,1.3);
+});
+// grand arch frames around corridor openings
+function arch(x,z){ box(7.6,0.5,1.1,matTrim,x,3.4,z); box(0.5,3.4,1.1,matTrim,x-3.55,1.7,z); box(0.5,3.4,1.1,matTrim,x+3.55,1.7,z); }
+arch(0,10); arch(0,22);
+// chandeliers (glow spheres + point light)
+function chandelier(x,z){ const g=new THREE.Group(); g.position.set(x,3.3,z);
+  const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.8),matTrim); stem.position.y=0.5; g.add(stem);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(0.7,0.07,10,24),matTrim); ring.rotation.x=Math.PI/2; g.add(ring);
+  for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const b=new THREE.Mesh(new THREE.SphereGeometry(0.11,12,12),new THREE.MeshStandardMaterial({color:0xfff2b0,emissive:0xffc94d,emissiveIntensity:2.2})); b.position.set(Math.cos(a)*0.7,-0.1,Math.sin(a)*0.7); g.add(b); }
+  scene.add(g); const pl=new THREE.PointLight(0xffdf9e,22,22,1.6); pl.position.set(x,2.9,z); scene.add(pl);
+}
+chandelier(-8,0); chandelier(8,0); chandelier(-8,31); chandelier(8,31); chandelier(0,16);
+// ceiling recessed glow strips
+function glowStrip(x,z,w,d){ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshBasicMaterial({color:0xfff6d8})); m.rotation.x=Math.PI/2; m.position.set(x,4.03,z); scene.add(m); }
+glowStrip(-8,0,4,1.4); glowStrip(8,0,4,1.4); glowStrip(-8,31,4,1.4); glowStrip(8,31,4,1.4);
+// benches + plants (obstacles)
+function bench(x,z,ry=0){ const g=new THREE.Group(); g.position.set(x,0,z); g.rotation.y=ry;
+  const seat=new THREE.Mesh(new THREE.BoxGeometry(2.4,0.12,0.6),matBench); seat.position.y=0.5; seat.castShadow=true; g.add(seat);
+  [[-1,0],[1,0]].forEach(([lx])=>{ const leg=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.5,0.55),matTrim); leg.position.set(lx,0.25,0); g.add(leg); });
+  scene.add(g); solid(x,z,ry?0.9:2.6,ry?2.6:0.9);
+}
+bench(-6,0); bench(6,0); bench(-6,31); bench(6,31);
+function plant(x,z){ const pot=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.26,0.5,12),new THREE.MeshStandardMaterial({color:0x8a3b1e})); pot.position.set(x,0.25,z); pot.castShadow=true; scene.add(pot);
+  const leaf=new THREE.Mesh(new THREE.SphereGeometry(0.55,12,12),new THREE.MeshStandardMaterial({color:0x2e7d32,roughness:.9})); leaf.position.set(x,1.0,z); leaf.castShadow=true; scene.add(leaf); solid(x,z,0.8,0.8); }
+plant(-2.4,-8.6); plant(2.4,-8.6); plant(-2.4,20.6); plant(2.4,20.6); plant(-15,15); plant(15,15);
+// hall title boards
+function textBoardTex(lines){ return canvasTex(1024,256,(g,w,h)=>{ g.fillStyle='#101426'; g.fillRect(0,0,w,h); g.strokeStyle='#c9a227'; g.lineWidth=10; g.strokeRect(8,8,w-16,h-16); g.fillStyle='#ffd86b'; g.textAlign='center'; g.font='bold 92px Georgia'; g.fillText(lines[0],w/2,120); g.fillStyle='#9fd8ff'; g.font='bold 44px Arial'; g.fillText(lines[1],w/2,195); }); }
+function board(x,y,z,ry,lines,w=6,h=1.5){ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:textBoardTex(lines)})); m.position.set(x,y,z); m.rotation.y=ry; scene.add(m); }
+board(0,3.0,-9.6,0,['HALL A','MOTION  •  FORCE  •  GRAVITATION (1–10)']);
+board(0,3.0,39.6,Math.PI,['HALL B','WORK  •  ENERGY  •  SOUND (11–20)']);
+board(0,2.6,10.75,Math.PI,['CORRIDOR','SCIENTISTS WALK — NEWTON • GALILEO'],4,1);
+// entrance doors (decorative, open)
+box(0.3,3.2,1.6,new THREE.MeshStandardMaterial({color:0x3a2412}),-2.2,1.6,-10).rotation.y=0.6;
+box(0.3,3.2,1.6,new THREE.MeshStandardMaterial({color:0x3a2412}),2.2,1.6,-10).rotation.y=-0.6;
+board(0,2.9,-10.4,Math.PI,['WELCOME','HOMI BHABHA PHYSICS GALLERY'],5,1.2);
+
+/* ---------- paintings ---------- */
+function paintingTexture(d){
+  return canvasTex(1024,1280,(g,w,h)=>{
+    // paper
+    const bg=g.createLinearGradient(0,0,0,h); bg.addColorStop(0,'#ffffff'); bg.addColorStop(1,'#eef1f6'); g.fillStyle=bg; g.fillRect(0,0,w,h);
+    // header band
+    g.fillStyle = d.hall==='A' ? '#16224a' : '#4a1622'; g.fillRect(0,0,w,210);
+    g.fillStyle='#c9a227'; g.fillRect(0,210,w,10);
+    g.fillStyle='#ffd86b'; g.textAlign='center'; g.font='bold 44px Arial'; g.fillText((d.hall==='A'?'HALL A  •  ':'HALL B  •  ')+'No.'+d.no, w/2, 80);
+    g.fillStyle='#ffffff'; g.font='bold 62px Georgia'; g.fillText(d.title.toUpperCase().slice(0,24), w/2, 160);
+    // formula panel
+    g.fillStyle='#0f1830'; roundRect(g,60,260,w-120,240,26); g.fill();
+    g.strokeStyle='#c9a227'; g.lineWidth=6; roundRect(g,60,260,w-120,240,26); g.stroke();
+    g.fillStyle='#ffd86b'; g.font='bold 84px Georgia'; g.fillText(d.f, w/2, 400);
+    g.fillStyle='#9fd8ff'; g.font='bold 30px Arial'; g.fillText(d.sub, w/2, 460);
+    // table header
+    let y=560; g.textAlign='left';
+    g.fillStyle='#16224a'; g.font='bold 34px Arial'; g.fillText('Symbol',90,y); g.fillText('Meaning',300,y); g.fillText('SI Unit',760,y);
+    g.fillStyle='#c9a227'; g.fillRect(70,y+16,w-140,4);
+    y+=64; g.font='28px Arial';
+    d.rows.forEach((r,i)=>{ if(i>4) return;
+      g.fillStyle=i%2?'#f2ead0':'#ffffff'; g.fillRect(70,y-36,w-140,56);
+      g.fillStyle='#111'; g.font='bold 32px Georgia'; g.fillText(r[0],90,y);
+      g.fillStyle='#222'; g.font='28px Arial'; g.fillText(String(r[1]).slice(0,26),300,y);
+      g.fillStyle='#0b4d8a'; g.font='bold 24px Arial'; g.fillText(String(r[2]).slice(0,24),720,y);
+      y+=56;
+    });
+    // footer note
+    g.fillStyle='#fff6d0'; roundRect(g,60,h-300,w-120,220,18); g.fill(); g.strokeStyle='#c9a227'; g.lineWidth=4; roundRect(g,60,h-300,w-140+20,220,18); g.stroke();
+    g.fillStyle='#333'; g.font='26px Arial'; wrap(g, '💡 '+d.note, 90, h-250, w-180, 36);
+    g.fillStyle='#888'; g.font='24px Arial'; g.textAlign='center'; g.fillText('— look closer • press E to zoom —', w/2, h-36);
+  });
+}
+function roundRect(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+function wrap(g,text,x,y,mw,lh){ const words=text.split(' '); let line='',yy=y; for(const wd of words){ const t=line+wd+' '; if(g.measureText(t).width>mw){ g.fillText(line,x,yy); line=wd+' '; yy+=lh; } else line=t; } g.fillText(line,x,yy); }
+
+const interactables=[];
+function addPainting(d, x,y,z, ry){
+  const tex = paintingTexture(d);
+  const grp = new THREE.Group(); grp.position.set(x,y,z); grp.rotation.y=ry; scene.add(grp);
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(2.5,3.1,0.1), matTrim); frame.castShadow=true; grp.add(frame);
+  const art = new THREE.Mesh(new THREE.PlaneGeometry(2.25,2.85), new THREE.MeshStandardMaterial({map:tex, roughness:.85}));
+  art.position.z=0.06; grp.add(art);
+  const num = new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.22), new THREE.MeshStandardMaterial({map:canvasTex(256,112,(g,w,h)=>{g.fillStyle='#111';g.fillRect(0,0,w,h);g.fillStyle='#ffd86b';g.font='bold 64px Arial';g.textAlign='center';g.fillText(d.no,w/2,80);})}));
+  num.position.set(0,-1.78,0.06); grp.add(num);
+  art.userData.formula=d; interactables.push(art);
+  // spotlight aimed at it
+  const wx = x + Math.sin(ry)*1.6, wz = z + Math.cos(ry)*1.6;
+  spot(wx,3.9,wz, x,z, 26);
+  return grp;
+}
+// Place 10 in Hall A around walls (avoid gaps): south wall segments, west, east, north segments
+const spotsA=[
+ {d:FORMULAS[0], x:-8.5, z:-9.55, ry:0},{d:FORMULAS[1], x:-4.5, z:-9.55, ry:0},{d:FORMULAS[2], x:4.5, z:-9.55, ry:0},{d:FORMULAS[3], x:8.5, z:-9.55, ry:0},
+ {d:FORMULAS[4], x:-15.55, z:-5, ry:Math.PI/2},{d:FORMULAS[5], x:-15.55, z:0, ry:Math.PI/2},{d:FORMULAS[6], x:-15.55, z:5, ry:Math.PI/2},
+ {d:FORMULAS[7], x:15.55, z:-5, ry:-Math.PI/2},{d:FORMULAS[8], x:15.55, z:0, ry:-Math.PI/2},{d:FORMULAS[9], x:15.55, z:5, ry:-Math.PI/2},
+];
+spotsA.forEach(s=>addPainting(s.d,s.x,1.9,s.z,s.ry));
+// north wall of A gets corridor side extra? keep 10 only. Add 10 in Hall B
+const spotsB=[
+ {d:FORMULAS[10], x:-8.5, z:39.55, ry:Math.PI},{d:FORMULAS[11], x:-4.5, z:39.55, ry:Math.PI},{d:FORMULAS[12], x:4.5, z:39.55, ry:Math.PI},{d:FORMULAS[13], x:8.5, z:39.55, ry:Math.PI},
+ {d:FORMULAS[14], x:-15.55, z:26, ry:Math.PI/2},{d:FORMULAS[15], x:-15.55, z:31, ry:Math.PI/2},{d:FORMULAS[16], x:-15.55, z:36, ry:Math.PI/2},
+ {d:FORMULAS[17], x:15.55, z:26, ry:-Math.PI/2},{d:FORMULAS[18], x:15.55, z:31, ry:-Math.PI/2},{d:FORMULAS[19], x:15.55, z:36, ry:-Math.PI/2},
+];
+spotsB.forEach(s=>addPainting(s.d,s.x,1.9,s.z,s.ry));
+// corridor portraits (Newton / Galileo decorative, non-formula? add as info, not counted)
+function decoPortrait(x,z,ry,label,sub){
+  const tex=canvasTex(512,640,(g,w,h)=>{ g.fillStyle='#f7f0dc'; g.fillRect(0,0,w,h); g.fillStyle='#222'; g.font='bold 150px Georgia'; g.textAlign='center'; g.fillText(label[0],w/2,260); g.fillStyle='#111'; g.font='bold 56px Georgia'; g.fillText(label,w/2,380); g.fillStyle='#555'; g.font='34px Arial'; g.fillText(sub,w/2,440); });
+  const grp=new THREE.Group(); grp.position.set(x,1.9,z); grp.rotation.y=ry; scene.add(grp);
+  const f=new THREE.Mesh(new THREE.BoxGeometry(1.3,1.6,0.08),matTrim); grp.add(f);
+  const a=new THREE.Mesh(new THREE.PlaneGeometry(1.15,1.45),new THREE.MeshStandardMaterial({map:tex})); a.position.z=0.05; grp.add(a);
+}
+decoPortrait(-2.95,14,Math.PI/2,'Newton','1643–1727'); decoPortrait(2.95,14,-Math.PI/2,'Galileo','1564–1642');
+decoPortrait(-2.95,18,Math.PI/2,'Einstein','1879–1955'); decoPortrait(2.95,18,-Math.PI/2,'Bhabha','1909–1966');
+
+/* ================= CONTROLS (keyboard + mouse drag + touch + on-screen) ================= */
+const keys={};
+addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if(e.code==='KeyE') openFocused();
+  if(e.code==='Equal'||e.code==='NumpadAdd') zoomBy(-6);
+  if(e.code==='Minus'||e.code==='NumpadSubtract') zoomBy(6);
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
+});
+addEventListener('keyup',e=>keys[e.code]=false);
+
+// --- mouse look: pointer-lock (optional) + always-on drag ---
+let locked=false;
+renderer.domElement.addEventListener('click',()=>{ if(started && !locked){ try{ renderer.domElement.requestPointerLock?.(); }catch(_){} } });
+document.addEventListener('pointerlockchange',()=>{ locked=document.pointerLockElement===renderer.domElement; });
+document.addEventListener('pointerlockerror',()=>{ locked=false; });
+addEventListener('mousemove',e=>{ if(locked && started){ player.yaw-=e.movementX*0.0023; player.pitch-=e.movementY*0.0023; player.pitch=Math.max(-1.35,Math.min(1.35,player.pitch)); } });
+
+// drag-to-look works for mouse AND touch, on the 3D canvas (panel buttons excluded)
+let dragLook={id:null,lx:0,ly:0};
+renderer.domElement.addEventListener('pointerdown',e=>{
+  dragLook.id=e.pointerId; dragLook.lx=e.clientX; dragLook.ly=e.clientY;
+  try{ renderer.domElement.setPointerCapture(e.pointerId); }catch(_){}
+});
+renderer.domElement.addEventListener('pointermove',e=>{
+  if(e.pointerId!==dragLook.id || !started) return;
+  if(locked) return; // pointer-lock already handles it
+  const dx=e.clientX-dragLook.lx, dy=e.clientY-dragLook.ly;
+  player.yaw-=dx*0.0045; player.pitch-=dy*0.0045;
+  player.pitch=Math.max(-1.35,Math.min(1.35,player.pitch));
+  dragLook.lx=e.clientX; dragLook.ly=e.clientY;
+});
+function endDrag(e){ if(e.pointerId===dragLook.id) dragLook.id=null; }
+renderer.domElement.addEventListener('pointerup',endDrag);
+renderer.domElement.addEventListener('pointercancel',endDrag);
+addEventListener('wheel',e=>{ if(started) zoomBy(Math.sign(e.deltaY)*4); },{passive:true});
+function zoomBy(d){ camera.fov=Math.max(28,Math.min(78,camera.fov+d)); camera.updateProjectionMatrix(); }
+
+// --- joystick (MOVE) ---
+const joyBase=document.getElementById('joyBase'), joyKnob=document.getElementById('joyKnob');
+let joy={x:0,y:0,id:null};
+function joyPos(e){ const r=joyBase.getBoundingClientRect(); const cx=r.left+r.width/2, cy=r.top+r.height/2; let dx=e.clientX-cx, dy=e.clientY-cy; const m=Math.hypot(dx,dy), max=44; if(m>max){dx*=max/m;dy*=max/m;} joyKnob.style.transform=`translate(${dx}px,${dy}px)`; joy.x=dx/max; joy.y=dy/max; }
+joyBase.addEventListener('pointerdown',e=>{ e.preventDefault(); joy.id=e.pointerId; try{joyBase.setPointerCapture(e.pointerId);}catch(_){} joyPos(e); });
+joyBase.addEventListener('pointermove',e=>{ if(e.pointerId===joy.id) joyPos(e); });
+function joyEnd(e){ if(e.pointerId===joy.id){ joy={x:0,y:0,id:null}; joyKnob.style.transform=''; } }
+joyBase.addEventListener('pointerup',joyEnd); joyBase.addEventListener('pointercancel',joyEnd);
+
+// --- LOOK buttons (hold to rotate, works on mobile + desktop) ---
+const lookState={left:false,right:false,up:false,down:false};
+document.querySelectorAll('#lookPad [data-look]').forEach(btn=>{
+  const dir=btn.dataset.look;
+  const on=e=>{ e.preventDefault(); lookState[dir]=true; btn.classList.add('held'); try{btn.setPointerCapture(e.pointerId);}catch(_){} };
+  const off=e=>{ lookState[dir]=false; btn.classList.remove('held'); };
+  btn.addEventListener('pointerdown',on);
+  btn.addEventListener('pointerup',off);
+  btn.addEventListener('pointercancel',off);
+  btn.addEventListener('pointerleave',off);
+  btn.addEventListener('contextmenu',e=>e.preventDefault());
+});
+// hide / show panel
+document.getElementById('panelHide').onclick=()=>{ document.getElementById('touchUI').classList.add('hiddenPanel'); document.getElementById('panelShow').classList.add('on'); };
+document.getElementById('panelShow').onclick=()=>{ document.getElementById('touchUI').classList.remove('hiddenPanel'); document.getElementById('panelShow').classList.remove('on'); };
+
+/* ---------- collision ---------- */
+function insideAny(x,z){
+  const m=0.55;
+  if(x>HALL_A.x-HALL_A.w/2+m && x<HALL_A.x+HALL_A.w/2-m && z>HALL_A.z-HALL_A.d/2+m && z<HALL_A.z+HALL_A.d/2-m) return true;
+  if(x>HALL_B.x-HALL_B.w/2+m && x<HALL_B.x+HALL_B.w/2-m && z>HALL_B.z-HALL_B.d/2+m && z<HALL_B.z+HALL_B.d/2-m) return true;
+  if(x>CORR.x-CORR.w/2+m && x<CORR.x+CORR.w/2-m && z>9.5 && z<22.5) return true;
+  return false;
+}
+function hitsSolid(x,z){ const r=0.32; for(const c of colliders){ if(x+r>c.x1&&x-r<c.x2&&z+r>c.z1&&z-r<c.z2) return true; } return false; }
+function tryMove(nx,nz){ if(!insideAny(nx,nz)) return false; if(hitsSolid(nx,nz)) { // slide
+    if(insideAny(nx,player.z)&&!hitsSolid(nx,player.z)){player.x=nx;return true;}
+    if(insideAny(player.x,nz)&&!hitsSolid(player.x,nz)){player.z=nz;return true;}
+    return false; } player.x=nx; player.z=nz; return true; }
+
+/* ---------- interaction / reader ---------- */
+const ray=new THREE.Raycaster(); ray.far=7;
+let focused=null, visited=new Set();
+const prompt=document.getElementById('prompt'), cross=document.getElementById('crosshair');
+let curIndex=0, fontScale=100;
+
+function checkFocus(){
+  ray.setFromCamera({x:0,y:0},camera);
+  const hits=ray.intersectObjects(interactables,false);
+  focused = hits.length?hits[0].object:null;
+  if(focused){ const d=focused.userData.formula;
+    prompt.innerHTML=`<b>No.${d.no} ${d.title}</b> — ${d.f} &nbsp; • &nbsp; press <b>E</b> / tap READ to zoom`;
+    prompt.classList.add('on'); cross.classList.add('active');
+  } else { prompt.classList.remove('on'); cross.classList.remove('active'); }
+}
+function openFocused(){ if(focused) openReader(focused.userData.formula); }
+document.getElementById('actionBtn').onclick=()=>openFocused();
+function openReader(d){
+  curIndex=FORMULAS.indexOf(d); fontScale=100; updateFont();
+  document.getElementById('readerKicker').textContent=(d.hall==='A'?'HALL A':'HALL B')+' • No.'+d.no+' / 20';
+  document.getElementById('readerTitle').textContent=d.title;
+  document.getElementById('readerF').textContent=d.f;
+  document.getElementById('readerSub').textContent=d.sub;
+  document.getElementById('readerTable').innerHTML=d.rows.map(r=>`<tr><td style="font-weight:800;font-family:Georgia">${r[0]}</td><td>${r[1]}</td><td><span class="unitPill">${r[2]}</span></td></tr>`).join('');
+  document.getElementById('readerNote').innerHTML='<b>💡 Remember:</b> '+d.note;
+  document.getElementById('reader').classList.add('on');
+  if(document.exitPointerLock) document.exitPointerLock();
+  if(!visited.has(d.no)){ visited.add(d.no); updateCounter(); }
+}
+function updateFont(){ document.getElementById('readerBody').style.fontSize=(fontScale/100*15)+'px'; document.getElementById('readerF').style.fontSize=`calc(clamp(28px,6vw,46px) * ${fontScale/100})`; document.getElementById('fontSizeLabel').textContent='Text size: '+fontScale+'%'; }
+document.getElementById('fontPlus').onclick=()=>{fontScale=Math.min(180,fontScale+15);updateFont();};
+document.getElementById('fontMinus').onclick=()=>{fontScale=Math.max(70,fontScale-15);updateFont();};
+document.getElementById('closeReader').onclick=()=>document.getElementById('reader').classList.remove('on');
+document.getElementById('prevBtn').onclick=()=>openReader(FORMULAS[(curIndex+19)%20]);
+document.getElementById('nextBtn').onclick=()=>openReader(FORMULAS[(curIndex+1)%20]);
+document.getElementById('reader').addEventListener('click',e=>{ if(e.target.id==='reader') e.currentTarget.classList.remove('on'); });
+document.getElementById('zin').onclick=()=>zoomBy(-6); document.getElementById('zout').onclick=()=>zoomBy(6);
+function updateCounter(){ document.getElementById('counter').textContent=`Visited ${visited.size} / 20 • Find all frames!`; }
+
+/* ---------- minimap ---------- */
+const mini=document.getElementById('mini').getContext('2d');
+function drawMini(){
+  mini.clearRect(0,0,150,190); mini.fillStyle='#0a0f1e'; mini.fillRect(0,0,150,190);
+  const sx=x=>(x+16)/32*150, sz=z=>(z+11)/52*190;
+  mini.fillStyle='#1d2a4a';
+  mini.fillRect(sx(-16),sz(-10),150*32/32,190*20/52); mini.fillRect(sx(-16),sz(22),150*32/32,190*18/52); mini.fillRect(sx(-3),sz(10),150*6/32,190*12/52);
+  mini.strokeStyle='#c9a227'; mini.strokeRect(sx(-16),sz(-10),150,190*20/52); mini.strokeRect(sx(-16),sz(22),150,190*18/52);
+  // paintings dots
+  mini.fillStyle='#ffd86b';
+  [...spotsA,...spotsB].forEach(s=>{ mini.beginPath(); mini.arc(sx(s.x),sz(s.z),2.2,0,7); mini.fill(); });
+  // player
+  const px=sx(player.x), pz=sz(player.z);
+  mini.fillStyle='#00ff88'; mini.beginPath(); mini.arc(px,pz,4,0,7); mini.fill();
+  mini.strokeStyle='#00ff88'; mini.beginPath(); mini.moveTo(px,pz); mini.lineTo(px-Math.sin(player.yaw)*12, pz-Math.cos(player.yaw)*12); mini.stroke();
+}
+
+/* ---------- main loop ---------- */
+let started=false;
+document.getElementById('startBtn').onclick=()=>{
+  document.getElementById('startOverlay').style.display='none';
+  document.getElementById('hud').classList.add('on');
+  document.getElementById('crosshair').classList.add('on');
+  document.getElementById('miniWrap').classList.add('on');
+  document.getElementById('touchUI').classList.add('on');
+  started=true;
+  try{ renderer.domElement.requestPointerLock?.(); }catch(_){}
+};
+document.getElementById('helpBtn').onclick=()=>{ document.documentElement.requestFullscreen?.(); };
+let soundOn=true; document.getElementById('soundBtn').onclick=e=>{soundOn=!soundOn;e.target.textContent=soundOn?'🔊 Footstep: on':'🔇 Footstep: off';};
+
+const clock=new THREE.Clock();
+let bob=0;
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),0.05);
+  if(started && !document.getElementById('reader').classList.contains('on')){
+    // keyboard rotate (so rotation never depends on mouse)
+    if(keys['ArrowLeft']||keys['KeyQ']||keys['KeyZ']) player.yaw+=1.9*dt;
+    if(keys['ArrowRight']||keys['KeyX']) player.yaw-=1.9*dt;
+    if(keys['KeyR']) player.pitch=Math.min(1.35,player.pitch+1.4*dt);
+    if(keys['KeyF']) player.pitch=Math.max(-1.35,player.pitch-1.4*dt);
+    // on-screen LOOK buttons (hold)
+    if(lookState.left) player.yaw+=2.1*dt;
+    if(lookState.right) player.yaw-=2.1*dt;
+    if(lookState.up) player.pitch=Math.min(1.35,player.pitch+1.6*dt);
+    if(lookState.down) player.pitch=Math.max(-1.35,player.pitch-1.6*dt);
+    let f=0,s=0;
+    if(keys['KeyW']||keys['ArrowUp'])f+=1; if(keys['KeyS']||keys['ArrowDown'])f-=1;
+    if(keys['KeyA'])s-=1; if(keys['KeyD'])s+=1;
+    f+=-joy.y; s+=joy.x;
+    const run=(keys['ShiftLeft']||keys['ShiftRight'])?1.8:1;
+    const sp=player.speed*run*dt;
+    const sin=Math.sin(player.yaw), cos=Math.cos(player.yaw);
+    const nx=player.x+(-sin*f+cos*s)*sp, nz=player.z+(-cos*f-sin*s)*sp;
+    const moved=tryMove(nx,nz);
+    if(moved&&(f||s)){ bob+=dt*9*run; }
+    applyCam();
+    camera.position.y=1.65+Math.sin(bob)*0.035;
+    // hall label
+    const hz=document.getElementById('hallName');
+    if(player.z<10) hz.textContent='HALL A — Motion & Force (1–10)';
+    else if(player.z<22) hz.textContent='CORRIDOR — Scientists Walk';
+    else hz.textContent='HALL B — Energy, Sound (11–20)';
+    checkFocus(); drawMini();
+  }
+  renderer.render(scene,camera);
+}
+applyCam(); animate();
+
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+</script>
+</body>
+</html>
