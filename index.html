@@ -24,12 +24,12 @@
   .controlsGrid div{background:#101020;border:1px solid #2e2e4a;border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.5}
   kbd{background:#fff;color:#111;border-radius:6px;padding:1px 7px;font-family:monospace;font-weight:700;font-size:12px;border-bottom:2px solid #999}
   /* HUD */
-  #hud{position:fixed;top:0;left:0;right:0;z-index:20;display:none;justify-content:space-between;align-items:flex-start;padding:10px 12px;pointer-events:none}
+  #hud{position:fixed;top:0;left:0;right:0;z-index:20;display:none;justify-content:space-between;align-items:flex-start;padding:10px 12px;pointer-events:none;gap:10px}
   #hud.on{display:flex}
   .hudBox{background:rgba(10,10,20,.72);backdrop-filter:blur(8px);border:1px solid rgba(201,162,39,.5);color:#ffe9a8;border-radius:12px;padding:8px 12px;font-size:13px;line-height:1.5;pointer-events:auto;max-width:46vw}
   #hallName{font-weight:800;font-size:14px;color:#ffd86b;letter-spacing:.5px}
   #counter{color:#9fd8ff}
-  #helpBtn,#soundBtn{cursor:pointer}
+  #helpBtn,#soundBtn,#mapBtn{cursor:pointer;white-space:nowrap}
   #crosshair{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:15;display:none;pointer-events:none}
   #crosshair.on{display:block}
   #crosshair .dot{width:8px;height:8px;background:#fff;border-radius:50%;box-shadow:0 0 8px #000,0 0 2px #fff;margin:auto}
@@ -83,10 +83,30 @@
   #prevBtn{background:#e8e8ef;color:#222}
   #nextBtn{background:#1a1a2e;color:#ffd86b}
   /* minimap */
-  #miniWrap{position:fixed;left:12px;top:74px;z-index:19;display:none;background:rgba(0,0,0,.6);border:1px solid rgba(255,216,107,.5);border-radius:10px;padding:6px}
+  #miniWrap{position:fixed;right:12px;top:64px;z-index:19;display:none;background:rgba(0,0,0,.6);border:1px solid rgba(255,216,107,.5);border-radius:10px;padding:6px}
   #miniWrap.on{display:block}
+  #miniToggle{position:fixed;right:12px;top:12px;z-index:21;display:none;background:rgba(10,10,20,.8);border:1px solid #ffd86b;color:#ffd86b;border-radius:10px;padding:7px 11px;font-size:13px;font-weight:800;cursor:pointer}
+  #miniToggle.on{display:block}
   #loading{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:#06060c;color:#ffd86b;font-size:16px}
-  @media(max-width:700px){.controlsGrid{grid-template-columns:1fr}.hudBox{font-size:12px;max-width:60vw}#prompt{bottom:210px}}
+  @media(max-width:700px){
+    .controlsGrid{grid-template-columns:1fr}
+    #hud{padding:6px;gap:6px}
+    .hudBox{font-size:11px;max-width:62vw;padding:6px 9px;line-height:1.4}
+    #hud .hudBox:last-child{display:none} /* help text hidden on phones — controls are on-screen */
+    #miniWrap{right:8px;top:52px;padding:4px}
+    #miniWrap canvas{width:104px;height:132px}
+    #prompt{bottom:auto;top:84px;font-size:12px;padding:8px 12px}
+    #touchUI{padding:0 6px calc(6px + env(safe-area-inset-bottom));gap:6px}
+    #joyBase{width:102px;height:102px}
+    #joyKnob{width:46px;height:46px;margin:-23px 0 0 -23px}
+    .joyLabel{display:none}
+    #actionBtn{width:66px;height:66px;font-size:13px;border-width:2px}
+    .zoomBtns button{width:40px;height:40px;font-size:18px}
+    #lookPad{padding:6px;border-radius:12px}
+    #lookPad button{width:42px;height:40px;font-size:16px}
+    #lookPad .lbl{display:none}
+    #panelHide{top:-28px}
+  }
 </style>
 <script type="importmap">
 {"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}
@@ -117,11 +137,12 @@
 
 <div id="hud">
   <div class="hudBox"><div id="hallName">HALL A — Motion &amp; Force</div><div id="counter">Visited 0 / 20 • Find all frames!</div></div>
-  <div class="hudBox" style="text-align:right">WASD walk • ◀/▶ rotate • drag to look • <b>E</b> read • wheel zoom<br><span id="helpBtn" style="color:#ffd86b;text-decoration:underline">⛶ Fullscreen</span> • <span id="soundBtn">🔊 Footstep: on</span></div>
+  <div class="hudBox" style="text-align:right">WASD walk • ◀/▶ rotate • drag to look • <b>E</b> read • wheel zoom<br><span id="helpBtn" style="color:#ffd86b;text-decoration:underline">⛶ Fullscreen</span> • <span id="mapBtn" style="color:#ffd86b;text-decoration:underline">🗺 Map</span> • <span id="soundBtn">🔊</span></div>
 </div>
 <div id="crosshair"><div class="dot"></div><div class="ring"></div></div>
 <div id="prompt"></div>
 <div id="miniWrap"><canvas id="mini" width="150" height="190"></canvas></div>
+<button id="miniToggle" title="Show/hide map">🗺 Map</button>
 
 <div id="touchUI">
   <div id="joyBase"><div id="joyKnob"></div><div class="joyLabel">MOVE</div></div>
@@ -178,13 +199,14 @@ const FORMULAS = [
  {hall:'B',no:20,title:'Echo Distance',f:'d = v·t / 2',sub:'ECHO • SONAR',rows:[['d','distance of obstacle','m'],['v','speed of sound','m/s'],['t','time for echo to return','s']],note:'Divide by 2 — sound goes and returns. Bats, SONAR and ultrasound scan use this.'},
 ];
 
-/* ================= RENDERER / SCENE ================= */
+/* ================= RENDERER / SCENE (lightweight mobile path) ================= */
+const isMobile = matchMedia('(pointer:coarse)').matches || Math.min(innerWidth, innerHeight) < 700;
 const app = document.getElementById('app');
-const renderer = new THREE.WebGLRenderer({antialias:true});
+const renderer = new THREE.WebGLRenderer({antialias:!isMobile, powerPreference: isMobile ? 'low-power' : 'high-performance'});
 renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, isMobile ? 1 : 1.75));
+renderer.shadowMap.enabled = !isMobile;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 app.appendChild(renderer.domElement);
 document.getElementById('loading').style.display='none';
 
@@ -222,15 +244,15 @@ const matCeil = new THREE.MeshStandardMaterial({color:0xf2ecdd, roughness:1});
 const matPillar = new THREE.MeshStandardMaterial({color:0xd9cba6, roughness:.7});
 const matBench = new THREE.MeshStandardMaterial({color:0x4a2e17, roughness:.6});
 
-/* ---------- lights ---------- */
-scene.add(new THREE.AmbientLight(0xfff2d8, 0.55));
-const hemi = new THREE.HemisphereLight(0xfff5e0, 0x221a10, 0.5); scene.add(hemi);
-function spot(x,y,z,tx,tz,int=60){ const L=new THREE.SpotLight(0xffe9b8,int,18,Math.PI/5,0.45,1.4); L.position.set(x,y,z); L.target.position.set(tx,1.5,tz); scene.add(L); scene.add(L.target); }
+/* ---------- lights (few lights on mobile — 20 spotlights would kill phones) ---------- */
+scene.add(new THREE.AmbientLight(0xfff2d8, isMobile ? 0.95 : 0.55));
+const hemi = new THREE.HemisphereLight(0xfff5e0, 0x221a10, isMobile ? 0.8 : 0.5); scene.add(hemi);
+function spot(x,y,z,tx,tz,int=60){ if(isMobile) return; const L=new THREE.SpotLight(0xffe9b8,int,18,Math.PI/5,0.45,1.4); L.position.set(x,y,z); L.target.position.set(tx,1.5,tz); scene.add(L); scene.add(L.target); }
 
 /* ---------- architecture helpers ---------- */
 const colliders=[]; // {x1,z1,x2,z2}
 function solid(x,z,w,d){ colliders.push({x1:x-w/2,z1:z-d/2,x2:x+w/2,z2:z+d/2}); }
-function box(w,h,d,mat,x,y,z,shadow=true){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); m.castShadow=shadow; m.receiveShadow=true; scene.add(m); return m; }
+function box(w,h,d,mat,x,y,z,shadow=true){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); m.castShadow=shadow && !isMobile; m.receiveShadow=true; scene.add(m); return m; }
 function floorRect(x,z,w,d,mat){ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat); m.rotation.x=-Math.PI/2; m.position.set(x,0,z); m.receiveShadow=true; scene.add(m); }
 
 /* Layout: HallA center (0,0) size 32x20 ; corridor x∈[-3,3], z∈[10,22] ; HallB center (0,31) size 32x18 */
@@ -262,7 +284,7 @@ box(32.6,0.3,20.6,matCeil,0,4.2,0,false); box(32.6,0.3,18.6,matCeil,0,4.2,31,fal
 box(32,0.25,0.25,matTrim,0,3.95,-9.65); box(32,0.25,0.25,matTrim,0,3.95,39.65);
 // pillars
 [[-13,-7],[13,-7],[-13,7],[13,7],[-13,24],[13,24],[-13,38],[13,38]].forEach(([x,z])=>{
-  const p=new THREE.Mesh(new THREE.CylinderGeometry(0.45,0.55,4.2,16),matPillar); p.position.set(x,2.1,z); p.castShadow=true; scene.add(p);
+  const p=new THREE.Mesh(new THREE.CylinderGeometry(0.45,0.55,4.2,16),matPillar); p.position.set(x,2.1,z); p.castShadow=!isMobile; scene.add(p);
   box(1.4,0.25,1.4,matTrim,x,0.12,z); box(1.4,0.25,1.4,matTrim,x,4.05,z); solid(x,z,1.3,1.3);
 });
 // grand arch frames around corridor openings
@@ -273,7 +295,7 @@ function chandelier(x,z){ const g=new THREE.Group(); g.position.set(x,3.3,z);
   const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.8),matTrim); stem.position.y=0.5; g.add(stem);
   const ring=new THREE.Mesh(new THREE.TorusGeometry(0.7,0.07,10,24),matTrim); ring.rotation.x=Math.PI/2; g.add(ring);
   for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; const b=new THREE.Mesh(new THREE.SphereGeometry(0.11,12,12),new THREE.MeshStandardMaterial({color:0xfff2b0,emissive:0xffc94d,emissiveIntensity:2.2})); b.position.set(Math.cos(a)*0.7,-0.1,Math.sin(a)*0.7); g.add(b); }
-  scene.add(g); const pl=new THREE.PointLight(0xffdf9e,22,22,1.6); pl.position.set(x,2.9,z); scene.add(pl);
+  scene.add(g); const pl=new THREE.PointLight(0xffdf9e,isMobile?10:22,isMobile?14:22,1.6); pl.position.set(x,2.9,z); scene.add(pl);
 }
 chandelier(-8,0); chandelier(8,0); chandelier(-8,31); chandelier(8,31); chandelier(0,16);
 // ceiling recessed glow strips
@@ -281,13 +303,13 @@ function glowStrip(x,z,w,d){ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d)
 glowStrip(-8,0,4,1.4); glowStrip(8,0,4,1.4); glowStrip(-8,31,4,1.4); glowStrip(8,31,4,1.4);
 // benches + plants (obstacles)
 function bench(x,z,ry=0){ const g=new THREE.Group(); g.position.set(x,0,z); g.rotation.y=ry;
-  const seat=new THREE.Mesh(new THREE.BoxGeometry(2.4,0.12,0.6),matBench); seat.position.y=0.5; seat.castShadow=true; g.add(seat);
+  const seat=new THREE.Mesh(new THREE.BoxGeometry(2.4,0.12,0.6),matBench); seat.position.y=0.5; seat.castShadow=!isMobile; g.add(seat);
   [[-1,0],[1,0]].forEach(([lx])=>{ const leg=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.5,0.55),matTrim); leg.position.set(lx,0.25,0); g.add(leg); });
   scene.add(g); solid(x,z,ry?0.9:2.6,ry?2.6:0.9);
 }
 bench(-6,0); bench(6,0); bench(-6,31); bench(6,31);
-function plant(x,z){ const pot=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.26,0.5,12),new THREE.MeshStandardMaterial({color:0x8a3b1e})); pot.position.set(x,0.25,z); pot.castShadow=true; scene.add(pot);
-  const leaf=new THREE.Mesh(new THREE.SphereGeometry(0.55,12,12),new THREE.MeshStandardMaterial({color:0x2e7d32,roughness:.9})); leaf.position.set(x,1.0,z); leaf.castShadow=true; scene.add(leaf); solid(x,z,0.8,0.8); }
+function plant(x,z){ const pot=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.26,0.5,12),new THREE.MeshStandardMaterial({color:0x8a3b1e})); pot.position.set(x,0.25,z); pot.castShadow=!isMobile; scene.add(pot);
+  const leaf=new THREE.Mesh(new THREE.SphereGeometry(0.55,12,12),new THREE.MeshStandardMaterial({color:0x2e7d32,roughness:.9})); leaf.position.set(x,1.0,z); leaf.castShadow=!isMobile; scene.add(leaf); solid(x,z,0.8,0.8); }
 plant(-2.4,-8.6); plant(2.4,-8.6); plant(-2.4,20.6); plant(2.4,20.6); plant(-15,15); plant(15,15);
 // hall title boards
 function textBoardTex(lines){ return canvasTex(1024,256,(g,w,h)=>{ g.fillStyle='#101426'; g.fillRect(0,0,w,h); g.strokeStyle='#c9a227'; g.lineWidth=10; g.strokeRect(8,8,w-16,h-16); g.fillStyle='#ffd86b'; g.textAlign='center'; g.font='bold 92px Georgia'; g.fillText(lines[0],w/2,120); g.fillStyle='#9fd8ff'; g.font='bold 44px Arial'; g.fillText(lines[1],w/2,195); }); }
@@ -300,9 +322,12 @@ box(0.3,3.2,1.6,new THREE.MeshStandardMaterial({color:0x3a2412}),-2.2,1.6,-10).r
 box(0.3,3.2,1.6,new THREE.MeshStandardMaterial({color:0x3a2412}),2.2,1.6,-10).rotation.y=-0.6;
 board(0,2.9,-10.4,Math.PI,['WELCOME','HOMI BHABHA PHYSICS GALLERY'],5,1.2);
 
-/* ---------- paintings ---------- */
+/* ---------- paintings (smaller textures on mobile = less memory) ---------- */
+const PT_W = isMobile ? 640 : 1024, PT_H = isMobile ? 800 : 1280;
 function paintingTexture(d){
-  return canvasTex(1024,1280,(g,w,h)=>{
+  return canvasTex(PT_W,PT_H,(g,w,h)=>{
+    g.scale(w/1024, h/1280); // draw once in 1024x1280 space, scaled for mobile
+    w=1024; h=1280;
     // paper
     const bg=g.createLinearGradient(0,0,0,h); bg.addColorStop(0,'#ffffff'); bg.addColorStop(1,'#eef1f6'); g.fillStyle=bg; g.fillRect(0,0,w,h);
     // header band
@@ -340,7 +365,7 @@ const interactables=[];
 function addPainting(d, x,y,z, ry){
   const tex = paintingTexture(d);
   const grp = new THREE.Group(); grp.position.set(x,y,z); grp.rotation.y=ry; scene.add(grp);
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(2.5,3.1,0.1), matTrim); frame.castShadow=true; grp.add(frame);
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(2.5,3.1,0.1), matTrim); frame.castShadow=!isMobile; grp.add(frame);
   const art = new THREE.Mesh(new THREE.PlaneGeometry(2.25,2.85), new THREE.MeshStandardMaterial({map:tex, roughness:.85}));
   art.position.z=0.06; grp.add(art);
   const num = new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.22), new THREE.MeshStandardMaterial({map:canvasTex(256,112,(g,w,h)=>{g.fillStyle='#111';g.fillRect(0,0,w,h);g.fillStyle='#ffd86b';g.font='bold 64px Arial';g.textAlign='center';g.fillText(d.no,w/2,80);})}));
@@ -493,7 +518,12 @@ function updateCounter(){ document.getElementById('counter').textContent=`Visite
 
 /* ---------- minimap ---------- */
 const mini=document.getElementById('mini').getContext('2d');
+function mapVisible(){ return document.getElementById('miniWrap').classList.contains('on'); }
+function setMap(v){ document.getElementById('miniWrap').classList.toggle('on', !!v); }
+document.getElementById('miniToggle').onclick=()=>setMap(!mapVisible());
+document.getElementById('mapBtn').onclick=()=>setMap(!mapVisible());
 function drawMini(){
+  if(!mapVisible()) return;
   mini.clearRect(0,0,150,190); mini.fillStyle='#0a0f1e'; mini.fillRect(0,0,150,190);
   const sx=x=>(x+16)/32*150, sz=z=>(z+11)/52*190;
   mini.fillStyle='#1d2a4a';
@@ -514,8 +544,9 @@ document.getElementById('startBtn').onclick=()=>{
   document.getElementById('startOverlay').style.display='none';
   document.getElementById('hud').classList.add('on');
   document.getElementById('crosshair').classList.add('on');
-  document.getElementById('miniWrap').classList.add('on');
   document.getElementById('touchUI').classList.add('on');
+  document.getElementById('miniToggle').classList.add('on');
+  setMap(!isMobile); // map open on desktop, closed by default on phones to avoid overlap
   started=true;
   try{ renderer.domElement.requestPointerLock?.(); }catch(_){}
 };
@@ -523,10 +554,12 @@ document.getElementById('helpBtn').onclick=()=>{ document.documentElement.reques
 let soundOn=true; document.getElementById('soundBtn').onclick=e=>{soundOn=!soundOn;e.target.textContent=soundOn?'🔊 Footstep: on':'🔇 Footstep: off';};
 
 const clock=new THREE.Clock();
-let bob=0;
+let bob=0, slowFrames=0;
 function animate(){
   requestAnimationFrame(animate);
   const dt=Math.min(clock.getDelta(),0.05);
+  // auto-quality: if consistently slow on mobile, drop resolution once
+  if(isMobile && dt > 0.045 && started){ if(++slowFrames > 90 && renderer.getPixelRatio() > 0.8){ renderer.setPixelRatio(0.8); slowFrames=0; } } else if(slowFrames>0){ slowFrames=0; }
   if(started && !document.getElementById('reader').classList.contains('on')){
     // keyboard rotate (so rotation never depends on mouse)
     if(keys['ArrowLeft']||keys['KeyQ']||keys['KeyZ']) player.yaw+=1.9*dt;
@@ -561,7 +594,7 @@ function animate(){
 }
 applyCam(); animate();
 
-addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setPixelRatio(Math.min(devicePixelRatio || 1, isMobile ? renderer.getPixelRatio() : 1.75)); renderer.setSize(innerWidth,innerHeight); });
 </script>
 </body>
 </html>
